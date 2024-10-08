@@ -17,11 +17,17 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 class Codmon2Gdrive:
     def __init__(self):
+        self.create_download_directory()
         self.driver = self.setup_driver()
         self.wait = WebDriverWait(self.driver, 10)
         self.drive_service = self.setup_drive_service()
         self.folder_id = self.get_or_create_folder(config.DRIVE_FOLDER_NAME)
         self.clear_download_folder()
+
+    def create_download_directory(self):
+        os.makedirs(config.CODMON_DOWNLOAD_PATH, exist_ok=True)
+        print(
+            f"Download directory created/verified: {config.CODMON_DOWNLOAD_PATH}")
 
     def setup_driver(self):
         chrome_options = webdriver.ChromeOptions()
