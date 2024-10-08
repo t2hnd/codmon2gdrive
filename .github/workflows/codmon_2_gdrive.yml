@@ -1,0 +1,27 @@
+name: Codmon2Gdrive
+
+on:
+  schedule:
+    - cron: "3 0 * * *" # Run daily at 3 UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium webdriver_manager google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+      - name: Run Codmon Scraper
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          CODMON_EMAIL: ${{ secrets.CODMON_EMAIL }}
+          CODMON_PASSWORD: ${{ secrets.CODMON_PASSWORD }}
+          DRIVE_FOLDER_NAME: ${{ secrets.DRIVE_FOLDER_NAME }}
+        run: python codmon_2_gdrive.py
