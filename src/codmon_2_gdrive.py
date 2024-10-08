@@ -93,22 +93,22 @@ class Codmon2Gdrive:
 
     def login(self):
         self.driver.get("https://parents.codmon.com/menu")
-        time.sleep(2)
+        time.sleep(4)
 
         self.click_element(
             "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > section > div.menu__loginLink")
-        time.sleep(2)
+        time.sleep(4)
 
         self.input_text("body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > input", config.CODMON_EMAIL)
         self.input_text("body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > div:nth-child(4) > input", config.CODMON_PASSWORD)
         self.click_element(
             "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > ons-button")
-        time.sleep(2)
+        time.sleep(4)
 
     def navigate_to_resource_room(self):
         self.click_element(
             "body > div > div:nth-child(1) > ons-page > div:nth-child(3) > ons-tabbar > div.tabbar.ons-tabbar__footer.ons-swiper-tabbar > ons-tab.serviceInActiveIcon.tabIcon.tabbar__item > button")
-        time.sleep(2)
+        time.sleep(4)
         self.click_element(
             "#service_page > div.page__content > ons-navigator > ons-page > div.page__content > div > div > section > ul > li:nth-child(1)")
         time.sleep(3)
@@ -126,7 +126,7 @@ class Codmon2Gdrive:
 
     def process_single_post(self, post):
         post.click()
-        time.sleep(2)
+        time.sleep(4)
 
         # Extract the prefix
         prefix_selector = "#service_page > div.page__content > ons-navigator > ons-page.handoutDetailPage.selectable-container.page > div.page__content > div > div.handoutDetailContainer > div.handoutDetailFooter > div.handoutPublishedPeriod"
@@ -161,7 +161,7 @@ class Codmon2Gdrive:
                 self.driver.switch_to.window(window_handle)
                 break
 
-        time.sleep(2)
+        time.sleep(4)
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
