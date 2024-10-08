@@ -1,0 +1,7 @@
+.env
+src/**/__pycache__
+.venv
+download/
+.DS_Store
+credentials.json
+token.json
