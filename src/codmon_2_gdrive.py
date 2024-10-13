@@ -8,20 +8,33 @@ import os
 import time
 import config
 import json
-from google.oauth2.credentials import Credentials
+import logging
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 
+# Set up logging to both console and file
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler("codmon_2_gdrive.log"),
+                        logging.StreamHandler()
+                    ])
+logger = logging.getLogger(__name__)
+
+
 class Codmon2Gdrive:
     def __init__(self):
+        logger.info("Initializing Codmon2Gdrive")
         self.create_download_directory()
         self.driver = self.setup_driver()
         self.wait = WebDriverWait(self.driver, 10)
         self.drive_service = self.setup_drive_service()
-        self.folder_id = self.get_or_create_folder(config.DRIVE_FOLDER_NAME)
+        self.folder_id = os.environ['DRIVE_FOLDER_ID']
+        logger.info(f"Using folder ID: {self.folder_id}")
         self.clear_download_folder()
 
     def create_download_directory(self):
@@ -30,68 +43,53 @@ class Codmon2Gdrive:
             f"Download directory created/verified: {config.CODMON_DOWNLOAD_PATH}")
 
     def setup_driver(self):
+        logger.info("Setting up Selenium WebDriver")
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_experimental_option("prefs", {
-            "download.default_directory": config.CODMON_DOWNLOAD_PATH,
+            "download.default_directory": os.environ.get('CODMON_DOWNLOAD_PATH', '/tmp/codmon_downloads'),
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
             "plugins.always_open_pdf_externally": True
         })
-        service = Service(ChromeDriverManager().install())
-        return webdriver.Chrome(service=service, options=chrome_options)
+        return webdriver.Chrome(options=chrome_options)
 
     def setup_drive_service(self):
+        logger.info("Setting up Drive service")
         SCOPES = ['https://www.googleapis.com/auth/drive.file']
-        creds = None
 
-        # Use environment variables for credentials
-        if 'GOOGLE_CREDENTIALS' in os.environ:
-            creds_data = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
+        service_account_info = json.loads(
+            os.environ['GOOGLE_SERVICE_ACCOUNT_KEY'])
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info, scopes=SCOPES)
 
-        if not creds or not creds.valid:
-            raise ValueError("Invalid or missing Google credentials")
+        logger.info("Drive service set up successfully")
+        return build('drive', 'v3', credentials=credentials)
 
-        return build('drive', 'v3', credentials=creds)
-
-    def get_or_create_folder(self, folder_name):
-        # Check if folder already exists
-        results = self.drive_service.files().list(
-            q=f"mimeType='application/vnd.google-apps.folder' and name='{
-                folder_name}' and trashed=false",
-            spaces='drive',
-            fields='files(id, name)').execute()
-        folders = results.get('files', [])
-
-        # If folder exists, return its ID
-        if folders:
-            return folders[0]['id']
-
-        # If folder doesn't exist, create it
-        folder_metadata = {
-            'name': folder_name,
-            'mimeType': 'application/vnd.google-apps.folder'
-        }
-        folder = self.drive_service.files().create(
-            body=folder_metadata, fields='id').execute()
-        return folder.get('id')
+    def create_download_directory(self):
+        download_path = os.environ.get(
+            'CODMON_DOWNLOAD_PATH', '/tmp/codmon_downloads')
+        os.makedirs(download_path, exist_ok=True)
+        logger.info(f"Download directory created/verified: {download_path}")
 
     def clear_download_folder(self):
-        for filename in os.listdir(config.CODMON_DOWNLOAD_PATH):
-            file_path = os.path.join(config.CODMON_DOWNLOAD_PATH, filename)
+        download_path = os.environ.get(
+            'CODMON_DOWNLOAD_PATH', '/tmp/codmon_downloads')
+        for filename in os.listdir(download_path):
+            file_path = os.path.join(download_path, filename)
             try:
                 if os.path.isfile(file_path) or os.path.islink(file_path):
                     os.unlink(file_path)
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except Exception as e:
-                print(f'Failed to delete {file_path}. Reason: {e}')
-        print(f"Download folder cleared: {config.CODMON_DOWNLOAD_PATH}")
+                logger.error(f'Failed to delete {file_path}. Reason: {e}')
+        logger.info(f"Download folder cleared: {download_path}")
 
     def login(self):
+        logger.info("Logging in to Codmon")
         self.driver.get("https://parents.codmon.com/menu")
         time.sleep(4)
 
@@ -99,21 +97,28 @@ class Codmon2Gdrive:
             "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > section > div.menu__loginLink")
         time.sleep(4)
 
-        self.input_text("body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > input", config.CODMON_EMAIL)
-        self.input_text("body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > div:nth-child(4) > input", config.CODMON_PASSWORD)
+        self.input_text(
+            "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > input", os.environ['CODMON_EMAIL'])
+        self.input_text(
+            "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > div:nth-child(4) > input", os.environ['CODMON_PASSWORD'])
         self.click_element(
             "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > ons-button")
         time.sleep(4)
+        logger.info("Login successful")
+
 
     def navigate_to_resource_room(self):
+        logger.info("Navigating to resource room")
         self.click_element(
             "body > div > div:nth-child(1) > ons-page > div:nth-child(3) > ons-tabbar > div.tabbar.ons-tabbar__footer.ons-swiper-tabbar > ons-tab.serviceInActiveIcon.tabIcon.tabbar__item > button")
         time.sleep(4)
         self.click_element(
             "#service_page > div.page__content > ons-navigator > ons-page > div.page__content > div > div > section > ul > li:nth-child(1)")
         time.sleep(3)
+        logger.info("Navigated to resource room")
 
     def process_posts(self):
+        logger.info("Processing posts")
         while True:
             posts = self.driver.find_elements(
                 By.CSS_SELECTOR, "#service_page > div.page__content > ons-navigator > ons-page:nth-child(2) > div.page__content > div > div:nth-child(3) > ul > li > div")
@@ -123,17 +128,17 @@ class Codmon2Gdrive:
 
             if not self.go_to_next_page():
                 break
+        logger.info("Finished processing posts")
 
     def process_single_post(self, post):
+        logger.info("Processing a single post")
         post.click()
         time.sleep(4)
 
-        # Extract the prefix
         prefix_selector = "#service_page > div.page__content > ons-navigator > ons-page.handoutDetailPage.selectable-container.page > div.page__content > div > div.handoutDetailContainer > div.handoutDetailFooter > div.handoutPublishedPeriod"
         prefix_element = self.wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, prefix_selector)))
-        prefix = prefix_element.text.strip().replace(
-            " ", "_")  # Replace spaces with underscores
+        prefix = prefix_element.text.strip().replace(" ", "_")
 
         files = self.driver.find_elements(
             By.CSS_SELECTOR, "#service_page > div.page__content > ons-navigator > ons-page.handoutDetailPage.selectable-container.page > div.page__content > div > div.attachmentContainer > div:nth-child(2) > ul > li > span.attachment_link")
@@ -143,14 +148,17 @@ class Codmon2Gdrive:
         for file in files:
             file_path = self.download_file(file, original_window)
             if file_path:
+                logger.info(f"File downloaded: {file_path}")
                 self.upload_to_drive(file_path, prefix)
+            else:
+                logger.warning(f"File download failed for: {file.text}")
 
         self.click_element(
             "#service_page > div.page__content > ons-navigator > ons-page.handoutDetailPage.selectable-container.page > ons-toolbar > div.left.toolbar__left > ons-back-button > span.back-button__label")
         time.sleep(1)
 
     def download_file(self, file, original_window):
-        print(f"Downloading: {file.text}")
+        logger.info(f"Downloading: {file.text}")
         assert len(self.driver.window_handles) == 1
 
         file.click()
@@ -165,13 +173,13 @@ class Codmon2Gdrive:
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
-        # Wait for the file to be downloaded
         file_name = file.text
-        file_path = os.path.join(config.CODMON_DOWNLOAD_PATH, file_name)
+        file_path = os.path.join(os.environ.get(
+            'CODMON_DOWNLOAD_PATH', '/tmp/codmon_downloads'), file_name)
         timeout = time.time() + 60  # 1 minute timeout
         while not os.path.exists(file_path):
             if time.time() > timeout:
-                print(f"Timeout: File {file_name} was not downloaded")
+                logger.error(f"Timeout: File {file_name} was not downloaded")
                 return None
             time.sleep(1)
 
@@ -185,11 +193,12 @@ class Codmon2Gdrive:
         return len(results.get('files', [])) > 0
 
     def upload_to_drive(self, file_path, prefix):
+        logger.info(f"Attempting to upload file: {file_path}")
         original_file_name = os.path.basename(file_path)
         new_file_name = f"{prefix}_{original_file_name}"
 
         if self.file_exists_in_folder(new_file_name):
-            print(
+            logger.info(
                 f"File '{new_file_name}' already exists in the folder. Skipping upload.")
             return
 
@@ -198,10 +207,14 @@ class Codmon2Gdrive:
             'parents': [self.folder_id]
         }
         media = MediaFileUpload(file_path, resumable=True)
-        file = self.drive_service.files().create(
-            body=file_metadata, media_body=media, fields='id').execute()
-        print(f'File ID: {file.get("id")} uploaded to folder: {
-              config.DRIVE_FOLDER_NAME}')
+
+        try:
+            file = self.drive_service.files().create(
+                body=file_metadata, media_body=media, fields='id').execute()
+            logger.info(f'File ID: {file.get("id")} uploaded to folder ID: {
+                        self.folder_id}')
+        except Exception as e:
+            logger.error(f"Error uploading file: {e}")
 
     def go_to_next_page(self):
         next_button = self.driver.find_element(
@@ -209,7 +222,9 @@ class Codmon2Gdrive:
         if next_button.get_attribute("disabled") is None:
             next_button.click()
             time.sleep(3)
+            logger.info("Navigated to next page")
             return True
+        logger.info("No more pages to process")
         return False
 
     def click_element(self, selector):
@@ -221,12 +236,16 @@ class Codmon2Gdrive:
         element.send_keys(text)
 
     def run(self):
+        logger.info("Starting Codmon to Google Drive process")
         try:
             self.login()
             self.navigate_to_resource_room()
             self.process_posts()
+        except Exception as e:
+            logger.error(f"Error during scraping: {e}", exc_info=True)
         finally:
             self.driver.quit()
+            logger.info("Codmon to Google Drive process completed")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,7 @@ For this purpose, you should create `.env` and provide your own credentials.
 CODMON_EMAIL=<email_to_login_codmon>
 CODMON_PASSWORD=<password_to_login_codmon>
 CODMON_DOWNLOAD_PATH=<path_to_save_downloaded_files>
-DRIVE_FOLDER_NAME=<google_drive_folder_name_to_upload_files>
+DRIVE_FOLDER_ID=<google_drive_folder_id_to_upload_files>
 ```
 
 You also need Google Drive credential setup.
