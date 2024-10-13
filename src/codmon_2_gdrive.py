@@ -12,9 +12,6 @@ import logging
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-
 
 # Set up logging to both console and file
 logging.basicConfig(level=logging.DEBUG,
@@ -105,7 +102,6 @@ class Codmon2Gdrive:
             "body > div > div:nth-child(1) > ons-page > ons-page > div.page__content > ons-navigator > ons-page > div.page__content > div.loginPage--parent > section > ons-button")
         time.sleep(4)
         logger.info("Login successful")
-
 
     def navigate_to_resource_room(self):
         logger.info("Navigating to resource room")

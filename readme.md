@@ -20,7 +20,7 @@ pip install -r requirements.txt
 ## Environmental variables
 
 For this tool to automatically login into [codmon page](https://parents.codmon.com/menu) and do the scraping tasks.
-Additionally, it requires upload path in Google Drive.
+Additionally, it requires upload folder ID in Google Drive.
 For this purpose, you should create `.env` and provide your own credentials.
 
 ```.env
@@ -28,6 +28,7 @@ CODMON_EMAIL=<email_to_login_codmon>
 CODMON_PASSWORD=<password_to_login_codmon>
 CODMON_DOWNLOAD_PATH=<path_to_save_downloaded_files>
 DRIVE_FOLDER_ID=<google_drive_folder_id_to_upload_files>
+GOOGLE_SERVICE_ACCOUNT_KEY=<google_service_account_credentials>
 ```
 
 You also need Google Drive credential setup.

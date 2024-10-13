@@ -6,3 +6,4 @@ download/
 credentials.json
 sa_credentials.json
 token.json
+*.log
