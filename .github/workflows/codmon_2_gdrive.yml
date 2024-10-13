@@ -1,4 +1,4 @@
-name: Codmon Scraper
+name: Codmon to Google Drive Scraper
 
 on:
   schedule:
@@ -20,10 +20,20 @@ jobs:
           pip install selenium webdriver_manager google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
       - name: Create download directory
         run: mkdir -p /tmp/codmon_downloads
-      - name: Run Codmon Scraper
+      - name: Run Codmon to Google Drive Scraper
         env:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           CODMON_EMAIL: ${{ secrets.CODMON_EMAIL }}
           CODMON_PASSWORD: ${{ secrets.CODMON_PASSWORD }}
           DRIVE_FOLDER_NAME: ${{ secrets.DRIVE_FOLDER_NAME }}
-        run: python src/codmon_2_gdrive.py
+          CODMON_DOWNLOAD_PATH: "/tmp/codmon_downloads"
+        run: |
+          python src/codmon_2_gdrive.py
+      - name: Display Python logs
+        if: always()
+        run: |
+          if [ -f codmon_2_gdrive.log ]; then
+            cat codmon_2_gdrive.log
+          else
+            echo "Log file not found"
+          fi
