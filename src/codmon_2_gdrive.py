@@ -23,6 +23,11 @@ class Codmon2Gdrive:
             os.environ['DRIVE_FOLDER_NAME'])
         self.clear_download_folder()
 
+    def create_download_directory(self):
+        os.makedirs(config.CODMON_DOWNLOAD_PATH, exist_ok=True)
+        print(
+            f"Download directory created/verified: {config.CODMON_DOWNLOAD_PATH}")
+
     def setup_driver(self):
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--headless')
