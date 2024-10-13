@@ -37,6 +37,11 @@ class Codmon2Gdrive:
         logger.info(f"Using folder ID: {self.folder_id}")
         self.clear_download_folder()
 
+    def create_download_directory(self):
+        os.makedirs(config.CODMON_DOWNLOAD_PATH, exist_ok=True)
+        print(
+            f"Download directory created/verified: {config.CODMON_DOWNLOAD_PATH}")
+
     def setup_driver(self):
         logger.info("Setting up Selenium WebDriver")
         chrome_options = webdriver.ChromeOptions()
@@ -101,6 +106,7 @@ class Codmon2Gdrive:
         time.sleep(4)
         logger.info("Login successful")
 
+
     def navigate_to_resource_room(self):
         logger.info("Navigating to resource room")
         self.click_element(
@@ -127,7 +133,7 @@ class Codmon2Gdrive:
     def process_single_post(self, post):
         logger.info("Processing a single post")
         post.click()
-        time.sleep(2)
+        time.sleep(4)
 
         prefix_selector = "#service_page > div.page__content > ons-navigator > ons-page.handoutDetailPage.selectable-container.page > div.page__content > div > div.handoutDetailContainer > div.handoutDetailFooter > div.handoutPublishedPeriod"
         prefix_element = self.wait.until(
@@ -163,7 +169,7 @@ class Codmon2Gdrive:
                 self.driver.switch_to.window(window_handle)
                 break
 
-        time.sleep(2)
+        time.sleep(4)
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
