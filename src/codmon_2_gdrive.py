@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import config
-from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.auth.transport.requests import Request
@@ -15,10 +15,12 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 class Codmon2Gdrive:
     def __init__(self):
+        self.create_download_directory()
         self.driver = self.setup_driver()
         self.wait = WebDriverWait(self.driver, 10)
         self.drive_service = self.setup_drive_service()
-        self.folder_id = self.get_or_create_folder(config.DRIVE_FOLDER_NAME)
+        self.folder_id = self.get_or_create_folder(
+            os.environ['DRIVE_FOLDER_NAME'])
         self.clear_download_folder()
 
     def setup_driver(self):
@@ -37,17 +39,13 @@ class Codmon2Gdrive:
 
     def setup_drive_service(self):
         SCOPES = ['https://www.googleapis.com/auth/drive.file']
-        creds = None
 
-        # Use environment variables for credentials
-        if 'GOOGLE_CREDENTIALS' in os.environ:
-            creds_data = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
+        service_account_info = json.loads(
+            os.environ['GOOGLE_SERVICE_ACCOUNT_KEY'])
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info, scopes=SCOPES)
 
-        if not creds or not creds.valid:
-            raise ValueError("Invalid or missing Google credentials")
-
-        return build('drive', 'v3', credentials=creds)
+        return build('drive', 'v3', credentials=credentials)
 
     def get_or_create_folder(self, folder_name):
         # Check if folder already exists
