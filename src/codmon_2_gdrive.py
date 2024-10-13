@@ -33,8 +33,7 @@ class Codmon2Gdrive:
         self.driver = self.setup_driver()
         self.wait = WebDriverWait(self.driver, 10)
         self.drive_service = self.setup_drive_service()
-        self.folder_id = self.get_or_create_folder(
-            os.environ['DRIVE_FOLDER_NAME'])
+        self.folder_id = os.environ['DRIVE_FOLDER_ID']
         logger.info(f"Using folder ID: {self.folder_id}")
         self.clear_download_folder()
 
@@ -63,28 +62,6 @@ class Codmon2Gdrive:
 
         logger.info("Drive service set up successfully")
         return build('drive', 'v3', credentials=credentials)
-
-    def get_or_create_folder(self, folder_name):
-        logger.info(f"Getting or creating folder: {folder_name}")
-        query = f"name='{
-            folder_name}' and mimeType='application/vnd.google-apps.folder' and trashed=false"
-        results = self.drive_service.files().list(
-            q=query, spaces='drive', fields='files(id, name)').execute()
-        folders = results.get('files', [])
-
-        if not folders:
-            logger.info(f"Folder '{folder_name}' not found. Creating it.")
-            folder_metadata = {
-                'name': folder_name,
-                'mimeType': 'application/vnd.google-apps.folder'
-            }
-            folder = self.drive_service.files().create(
-                body=folder_metadata, fields='id').execute()
-            return folder.get('id')
-        else:
-            logger.info(f"Folder '{folder_name}' found with ID: {
-                        folders[0]['id']}")
-            return folders[0]['id']
 
     def create_download_directory(self):
         download_path = os.environ.get(
@@ -228,8 +205,8 @@ class Codmon2Gdrive:
         try:
             file = self.drive_service.files().create(
                 body=file_metadata, media_body=media, fields='id').execute()
-            logger.info(f'File ID: {file.get("id")} uploaded to folder: {
-                        os.environ["DRIVE_FOLDER_NAME"]}')
+            logger.info(f'File ID: {file.get("id")} uploaded to folder ID: {
+                        self.folder_id}')
         except Exception as e:
             logger.error(f"Error uploading file: {e}")
 

@@ -25,7 +25,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           CODMON_EMAIL: ${{ secrets.CODMON_EMAIL }}
           CODMON_PASSWORD: ${{ secrets.CODMON_PASSWORD }}
-          DRIVE_FOLDER_NAME: ${{ secrets.DRIVE_FOLDER_NAME }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
           CODMON_DOWNLOAD_PATH: "/tmp/codmon_downloads"
         run: |
           python src/codmon_2_gdrive.py
