@@ -4,4 +4,5 @@ src/**/__pycache__
 download/
 .DS_Store
 credentials.json
+sa_credentials.json
 token.json
